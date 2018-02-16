@@ -1,6 +1,9 @@
-wrapper = canfodInit();
+[wrapper, n] = canfodInit();
+
+[models] = canfodShowSpectrometers(wrapper, n);
+
+[id] = canfodSelectSpectrometer(wrapper, n);
+
 canfodSetParam(wrapper);
-spectrum = canfodAquire(wrapper);
-close all;
-plot(spectrum);
-canfodClose(wrapper);
+
+
