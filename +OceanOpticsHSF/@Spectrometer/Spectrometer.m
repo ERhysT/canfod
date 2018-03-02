@@ -2,7 +2,7 @@ classdef Spectrometer < handle
     
     properties
         
-        id                   int        % ID number assigned by omnidriver
+        idx                  int        % index number assigned by omnidriver
                                         % omnidriver uses zero based counting
                                         % system
 
@@ -71,6 +71,8 @@ classdef Spectrometer < handle
                                         % applied to improve the accuracy of the
                                         % returned values.
         
+
+
         % Optional supported features, interrogated on construction to determine
         % if each feature is supported.
         
@@ -124,6 +126,14 @@ classdef Spectrometer < handle
                                         % acquisitions on this spectrometer.
     end
     
+    properties (Access = private, Constant = true)
+        % Properties not defined by OmniDriver but useful for validation.
+
+        MAX_BOXCAR_WIDTH = 100;         % maximum number of pixels averaged
+        MAX_N_SCANS = 50;               % maximum number of scans to average
+        
+    end
+
     methods
     
         function S = Spectrometer(OD)
@@ -137,165 +147,279 @@ classdef Spectrometer < handle
             
             S(OD.number_connected_spectrometer) = Spectrometer;
 
-            id = 0;                 % omnidriver uses 0 based counting
+            idx = 0;                 % omnidriver uses 0 based counting
 
-            for n = 1 : OD.number_connected_spectrometers)
+            for idx = 1 : OD.number_connected_spectrometers)
                 
-                S(n).id = id;
-                id = id + 1;
+                S(idx).idx = idx;
+                idx = idx + 1;
 
-                S(n).name = OD.wrapper.getName(S(n).id);
-                S(n).serial_number = OD.wrapper.getSerialNumber(S(n).id);
+                S(idx).name = OD.wrapper.getName(S(idx).idx);
+                S(idx).serial_number = OD.wrapper.getSerialNumber(S(idx).idx);
 
-                S(n).max_int_time = ... % us
-                    OD.wrapper.getMaximumIntegrationTime(S(n).id);
+                S(idx).max_int_time = ... % us
+                    OD.wrapper.getMaximumIntegrationTime(S(idx).idx);
                 
-                S(n).min_int_time = ... % us
-                    OD.wrapper.getMinimumIntegrationTime(S(n).id);
+                S(idx).min_int_time = ... % us
+                    OD.wrapper.getMinimumIntegrationTime(S(idx).idx);
                 
-                S(n).int_step_inc = ... % us
-                    OD.wrapper.getIntegrationStepIncrement(S(n).id);
+                S(idx).int_step_inc = ... % us
+                    OD.wrapper.getIntegrationStepIncrement(S(idx).idx);
                 
-                S(n).max_intensity = ... % a.u.
-                    OD.wrapper.getMaxiumIntensity(S(n).id);
+                S(idx).max_intensity = ... % a.u.
+                    OD.wrapper.getMaxiumIntensity(S(idx).idx);
                 
-                S(n).firmware_ver = ...
-                    OD.wrapper.getFirmwareVersion(S(n).id);
+                S(idx).firmware_ver = ...
+                    OD.wrapper.getFirmwareVersion(S(idx).idx);
                 
-                S(n).firmware_model = ...
-                    OD.wrapper.getFirmwareModel(S(n).id);
+                S(idx).firmware_model = ...
+                    OD.wrapper.getFirmwareModel(S(idx).idx);
                 
-                S(n).n_px = ...
-                    OD.wrapper.getNumberOfPixels(S(n).id);
+                S(idx).n_px = ...
+                    OD.wrapper.getNumberOfPixels(S(idx).idx);
                 
-                S(n).n_dark_px = ...
-                    OD.wrapper.getNumberOfDarkPixels(S(n).id);
+                S(idx).n_dark_px = ...
+                    OD.wrapper.getNumberOfDarkPixels(S(idx).idx);
                 
-                S(n).int_time = ... % us
-                    OD.wrapper.getIntegrationTime(S(n).id);
+                S(idx).int_time = ... % us
+                    OD.wrapper.getIntegrationTime(S(idx).idx);
                 
-                S(n).n_scan_average = ....
-                    OD.wrapper.getScansToAverage(S(n).id);
+                S(idx).n_scan_average = ....
+                    OD.wrapper.getScansToAverage(S(idx).idx);
                 
-                S(n).boxcar_width = ...
-                    OD.wrapper.getBoxcarWidth(S(n).id);
+                S(idx).boxcar_width = ...
+                    OD.wrapper.getBoxcarWidth(S(idx).idx);
                 
-                S(n).cc_eeprom = ...
-                    OD.wrapper.getCalibrationCoefficientsFromEEProm(S(n).id);
+                S(idx).cc_eeprom = ...
+                    OD.wrapper.getCalibrationCoefficientsFromEEProm(S(idx).idx);
 
-                S(n).cc_buffer = ...
-                    OD.wrapper.getCalibrationCoefficientsFromBuffer(S(n).id);
+                S(idx).cc_buffer = ...
+                    OD.wrapper.getCalibrationCoefficientsFromBuffer(S(idx).idx);
                 
-                S(n).mode = ...
-                    OD.wrapper.getExternalTriggerMode(S(n).id);
+                S(idx).mode = ...
+                    OD.wrapper.getExternalTriggerMode(S(idx).idx);
                 
-                S(n).p_elect_dark = ...
-                    OD.wrapper.getCorrectForElectricalDark(S(n).id);
+                S(idx).p_elect_dark = ...
+                    OD.wrapper.getCorrectForElectricalDark(S(idx).idx);
                 
-                S(n).p_stray_light = ...
-                    OD.wrapper.getCorrectForStrayLight(S(n).id);
+                S(idx).p_stray_light = ...
+                    OD.wrapper.getCorrectForStrayLight(S(idx).idx);
                 
-                S(n).p_non_linear = ...
-                    OD.wrapper.CorrectForDetectorNonlinearity(S(n).id);
+                S(idx).p_non_linear = ...
+                    OD.wrapper.CorrectForDetectorNonlinearity(S(idx).idx);
                 
-                S(n).p_strobe = ...
-                    OD.wrapper.getStrobeEnable(S(n).id);
+                S(idx).p_strobe = ...
+                    OD.wrapper.getStrobeEnable(S(idx).idx);
 
-                S(n).wavelengths = ...
-                    OD.wrapper.getWavelengths(S(n).id);
+                S(idx).wavelengths = ...
+                    OD.wrapper.getWavelengths(S(idx).idx);
                 
                 % Determine what features are avaliable for use on this
                 % spectrometer
                 
-                S(n).features.gpio = ...
-                    OD.wrapper.isFeatureSupportedGPIO(S(n).id);
+                S(idx).features.gpio = ...
+                    OD.wrapper.isFeatureSupportedGPIO(S(idx).idx);
 
-                S(n).features.saturation_threshold = ...
-                    OD.wrapper.isFeatureSupportedSaturationThreshold(S(n).id);
+                S(idx).features.saturation_threshold = ...
+                    OD.wrapper.isFeatureSupportedSaturationThreshold(S(idx).idx);
                 
-                S(n).features.spibus = ...
-                    OD.wrapper.isFeatureSupportedSPIBus(S(n).id);
+                S(idx).features.spibus = ...
+                    OD.wrapper.isFeatureSupportedSPIBus(S(idx).idx);
                 
-                S(n).features.light_src = ...
-                    OD.wrapper.isFeatureSupportedLightSource(S(n).id);
+                S(idx).features.light_src = ...
+                    OD.wrapper.isFeatureSupportedLightSource(S(idx).idx);
                 
-                S(n).features.single_strobe = ...
-                    OD.wrapper.isFeatureSupportedSingleStrobe(S(n).id);
+                S(idx).features.single_strobe = ...
+                    OD.wrapper.isFeatureSupportedSingleStrobe(S(idx).idx);
                 
-                S(n).features.current_out = ...
-                    OD.wrapper.isFeatureSupportedCurrentOut(S(n).id);
+                S(idx).features.current_out = ...
+                    OD.wrapper.isFeatureSupportedCurrentOut(S(idx).idx);
                 
-                S(n).features.board_temp = ...
-                    OD.wrapper.isFeatureSupportedBoardTemperature(S(n).id);
+                S(idx).features.board_temp = ...
+                    OD.wrapper.isFeatureSupportedBoardTemperature(S(idx).idx);
                 
-                S(n).features.detector_temp = ...
-                    OD.wrapper.isFeatureSupportedDetectorTemperature(S(n).id);
+                S(idx).features.detector_temp = ...
+                    OD.wrapper.isFeatureSupportedDetectorTemperature(S(idx).idx);
                 
-                S(n).features.analogue_in = ...
-                    OD.wrapper.isFeatureSupportedAnalogIn(S(n).id);
+                S(idx).features.analogue_in = ...
+                    OD.wrapper.isFeatureSupportedAnalogIn(S(idx).idx);
                 
-                S(n).features.analogue_out = ...
-                    OD.wrapper.isFeatureSupportedAnalogOut(S(n).id);
+                S(idx).features.analogue_out = ...
+                    OD.wrapper.isFeatureSupportedAnalogOut(S(idx).idx);
                 
-                S(n).features.ls450 = ...
-                    OD.wrapper.isFeatureSupportedLS450(S(n).id);
+                S(idx).features.ls450 = ...
+                    OD.wrapper.isFeatureSupportedLS450(S(idx).idx);
                 
-                S(n).features.ls450_external_temp = ...
+                S(idx).features.ls450_external_temp = ...
                     OD.wrapper ...
-                    .isFeatureSupported_USB_LS450_ExternalTemperature(S(n).id);
+                    .isFeatureSupported_USB_LS450_ExternalTemperature(S(idx).idx);
                 
-                S(n).features.uv_vis_light_src = ...
-                    OD.wrapper.isFeatureSupported_UV_VIS_LightSource(S(n).id);
+                S(idx).features.uv_vis_light_src = ...
+                    OD.wrapper.isFeatureSupported_UV_VIS_LightSource(S(idx).idx);
                 
-                S(n).features.px_binning = ...
-                    OD.wrapper.isFeatureSupportedPixelBinning(S(n).id);
+                S(idx).features.px_binning = ...
+                    OD.wrapper.isFeatureSupportedPixelBinning(S(idx).idx);
                 
-                S(n).features.network_config = ...
-                    OD.wrapper.isFeatureSupportedNetworkConfigure(S(n).id);
+                S(idx).features.network_config = ...
+                    OD.wrapper.isFeatureSupportedNetworkConfigure(S(idx).idx);
                 
-                S(n).features.spectrum_type = ...
-                    OD.wrapper.isFeatureSupportedSpectrumType(S(n).id);
+                S(idx).features.spectrum_type = ...
+                    OD.wrapper.isFeatureSupportedSpectrumType(S(idx).idx);
                 
-                S(n).features.external_trigger_delay = ...
-                    OD.wrapper.isFeatureSupportedExternalTriggerDelay(S(n).id);
+                S(idx).features.external_trigger_delay = ...
+                    OD.wrapper.isFeatureSupportedExternalTriggerDelay(S(idx).idx);
                 
-                S(n).features.ic2bus = ...
-                    OD.wrapper.isFeatureSupportedI2CBus(S(n).id);
+                S(idx).features.ic2bus = ...
+                    OD.wrapper.isFeatureSupportedI2CBus(S(idx).idx);
                 
-                S(n).features.hi_gain_mode = ...
-                    OD.wrapper.isFeatureSupportedHighGainMode(S(n).id);
+                S(idx).features.hi_gain_mode = ...
+                    OD.wrapper.isFeatureSupportedHighGainMode(S(idx).idx);
                 
-                S(n).features.irradiance_cal_factor = ...
+                S(idx).features.irradiance_cal_factor = ...
                     OD.wrapper ...
-                    .isFeatureSupportedIrradianceCalibrationFactor(S(n).id);
+                    .isFeatureSupportedIrradianceCalibrationFactor(S(idx).idx);
                 
-                S(n).features.nonlinearity_correction_provider = ...
+                S(idx).features.nonlinearity_correction_provider = ...
                     OD.wrapper ...
-                    .isFeatureSupportedNonlinearityCorrectionProvider(S(n).id);
+                    .isFeatureSupportedNonlinearityCorrectionProvider(S(idx).idx);
                 
-                S(n).features.stray_light_correction = ...
-                    OD.wrapper.isFeatureSupportedStrayLightCorrection(S(n).id);
+                S(idx).features.stray_light_correction = ...
+                    OD.wrapper.isFeatureSupportedStrayLightCorrection(S(idx).idx);
                 
-                S(n).features.controller_version = ...
-                    OD.wrapper.isFeatureSupportedVersion(S(n).id);
+                S(idx).features.controller_version = ...
+                    OD.wrapper.isFeatureSupportedVersion(S(idx).idx);
                 
-                S(n).features.wavelength_calibration_provider = ...
+                S(idx).features.wavelength_calibration_provider = ...
                     OD.wrapper ...
-                    .isFeatureSupportedWavelengthCalibrationProvider(S(n).id);
+                    .isFeatureSupportedWavelengthCalibrationProvider(S(idx).idx);
                 
-                S(n).features.thermo_electric = ...
-                    OD.wrapper.isFeatureSupportedThermoElectric(S(n).id);
+                S(idx).features.thermo_electric = ...
+                    OD.wrapper.isFeatureSupportedThermoElectric(S(idx).idx);
                 
-                S(n).features.indy = ...
-                    OD.wrapper.isFeatureSupportedIndy(S(n).id);
+                S(idx).features.indy = ...
+                    OD.wrapper.isFeatureSupportedIndy(S(idx).idx);
                 
-                S(n).features.internal_trigger = ...
-                    OD.wrapper.isFeatureSupportedInternalTrigger(S(n).id);
+                S(idx).features.internal_trigger = ...
+                    OD.wrapper.isFeatureSupportedInternalTrigger(S(idx).idx);
                 
-                S(n).features.data_buffer = ...
-                    OD.wrapper.getFeatureControllerDataBuffer(S(n).id);
+                S(idx).features.data_buffer = ...
+                    OD.wrapper.getFeatureControllerDataBuffer(S(idx).idx);
 
             end
+        end
+        
+        function setIntegrationTime(idx, time)
+        % Validate the requested integration time according to the
+        % capabilites of the indexed spectrometer. If within acceptable
+        % boundries, apply to indexed spectrometer.
+
+            if time < S(idx).min_int_time ...
+                    || time > S(idx).max_int_time ...
+                    || ~isreal(time) ...
+                    || ~isint(time)
+
+                errstr = sprintf(['Cannot set integration time: the integration ' ...
+                                  'time must be a real integer between %d and ' ...
+                                  '%d us.'], ...
+                                 S(idx).min_int_time, S(idx).max_int_time);
+                warning(errstr);
+
+                return;
+            
+            end
+
+            % Set Integration time using OmniDriver wrapper:
+            %
+            % com.oceanoptics.omnidriver.api.wrapper
+            %  setIntegrationTime()
+            %
+            % public void setIntegrationTime(int spectrometerIndex,
+            %                                int usec)
+
+            OD.wrapper.setIntegrationTime(idx, time);
+            assertApplied(time, OD.wrapper.getIntegrationTime(idx), ...
+                          'integration time');
+            S(idx).int_time = time;
+
+        end
+
+        function setBoxcarWidth(idx, width)
+        % Set the number of pixels on either side of a given pixel to average
+        % together when obtaining a spectrum. For example, if you set this
+        % parameter to 2, each pixel of the acquired spectrum will be the
+        % result of averaging 5 pixels together, 2 on the left, 2 on the
+        % right, and the pixel itself. Set this value to 0 to avoid this
+        % "smoothing" mechanism.
+            
+            if ~isint(width) ...
+                    || width < 0 ...
+                    || ~isreal(width) ...
+                    || width > S.MAX_BOXCAR_WIDTH
+
+                errstr = sprintf(['Cannot set boxcar width, input must be ' ...
+                                  'a real positive integer less than %d.'], ...
+                                 S.MAX_BOXCAR_WIDTH);
+                warning(errstr);
+                return;
+            
+            end
+
+            % Set boxcar width using OmniDriver wrapper:
+            %
+            % com.oceanoptics.omnidriver.api.wrapper
+            %  setBoxcarWidth
+            %
+            % public void setBoxcarWidth(int spectrometerIndex,
+            %                            int numberOfPixelsOnEitherSideOfCenter)
+
+            OD.wrapper.setBoxcarWidth(idx, width);
+            assertApplied(width, OD.wrapper.getBoxcarWidth(idx), ...
+                          'boxcar width');
+            S(idx).boxcar_width = width;
+
+        end
+    end
+
+    function setScansToAverage(idx, scans)
+    % Define number of scans to average before returning spectral data from
+    % OmniDriver getSpectrum(). Default is "1" - ie. do not average multiple
+    % scans together. 
+        
+        if ~isint(scans) ...
+                || ~isreal(scans) ...
+                || scans < 1 ...
+                || scans > S.MAX_SCANS
+            
+            errstr = sprintf(['Cannot set boxcar width, input must be ' ...
+                              'a real positive integer less than %d.'], ...
+                             S.MAX_SCANS);
+            warning(errstr);
+            return;
+            
+            % Set scans to average using OmniDriver wrapper:
+            %
+            % com.oceanoptics.omnidriver.api.wrapper            
+            %  setScansToAverage
+            %
+            % public void setScansToAverage(int spectrometerIndex,
+            %                               int channelIndex,
+                              
+            OD.wrapper.setScansToAverage(idx, scans);
+            assertApplied(scans, OD.wrapper.getScansToAverage(idx), ...
+                          'scans to average');
+            S(idx).boxcar_width = width;
+        
+    end
+    
+
+    methods (Access = private)
+        
+        function assertApplied(tx, rx, str)
+           
+            errstr = sprintf('OmniDriver I/O error, could not set %s.', str);
+
+            assert(tx == rx, errstr);
+            
         end
     end
 end
