@@ -1,4 +1,17 @@
 classdef OmniDriver < handle
+% OceanOpticsHSF.OmniDriver class
+% 
+% Defines OmniDriver object that interfaces with a device driver to allow
+% communication with OceanOptics Inc. spectrometers.
+% 
+% The Spectrometer interfaces with the OmniDriver using the OceanOptics
+% OmniDriver wrapper:
+% 
+% Class: com.oceanoptics.omnidriver.api.wrapper
+% 
+% Once the OmniDriver object has been constructed, each of the connected
+% spectrometers are initialised. The spectrometers can be operated using the
+% OceanOpticsHSF.Spectromter class.
     
     properties
         
@@ -21,8 +34,8 @@ classdef OmniDriver < handle
                 
             catch
                 
-                error(['The OceanOptics Inc. OmniDriver was not detected as installed on this computer.Please install the OmniDriver. If the OmniDriver is installed, ensure that the Java archive (OmniDriver.jar) is in the MATLAB classpath. The OmniDriver can be added to the static path by editing $MATLABROOT/toolbox/local/classpath.txt and $MATLABROOT/toolbox/local/librarypath.txt. Alternatively, the OmniDriver can be installed on the dynamic path using the static method addOmniDriverToClasspath() from this class.']);
-
+                warning(['The OceanOptics Inc. OmniDriver was not detected as installed on this computer. Please install the OmniDriver. If the OmniDriver is installed, ensure that the Java archive (OmniDriver.jar) is in the MATLAB classpath. The OmniDriver can be added to the static path by editing $MATLABROOT/toolbox/local/classpath.txt and $MATLABROOT/toolbox/local/librarypath.txt. Alternatively, the OmniDriver can be installed on the dynamic path using the static method addOmniDriverToClasspath() from this class.']);
+                return
             end
             
             OD.api_version = OD.wrapper.getApiVersion();

@@ -1,7 +1,48 @@
 classdef Spectrometer < handle
-    
+% OceanOpticsHSF.Spectrometer class
+% 
+% Defines Spectrometer object that interfaces with OceanOptics.OmniDriver
+% object to perform spectral measurements. The Spectrometer constructed is an
+% array of objects with one instance of the Spectrometer object for every USB
+% spectrometer detected by the OmniDriver.
+% 
+% The Spectrometer interfaces with the OmniDriver using the Java wrapper
+% contained in an OmniDriver object.
+% 
+%          com.oceanoptics.omnidriver.api.wrapper
+%
+% NOTE: network spectrometers are not currently supported
+%
+% The default settings for each connected spectrometer are determined upon
+% construction. These values are stored as properties. The extra features of the
+% spectrometer which are interfaced using controllers other than the OmniDriver
+% are determined using the isFeatureSupportedXXXX() functions provided by
+% OmniDriver.
+%
+% Measurement parameters such as integration time, boxcar width and number of
+% scans to average can be set using methods. These parameters are validated
+% using 
+% 
+% Additional validation parameters have been created where the
+% spectrometer/OmniDriver does not provide a mechanism for sane
+% defaults.
+% 
+% Calibration are retrevied on initialisation, however they cannot currently
+% be set.
+% 
+% TODO: -
+%       -
+%       -
+%       -
+%       -
+%       -
+%       -
+%       -
+% 
     properties
         
+        OD                   OmniDriver % Reference to OmniDriver
+
         idx                  int        % index number assigned by omnidriver
                                         % omnidriver uses zero based counting
                                         % system
@@ -70,8 +111,6 @@ classdef Spectrometer < handle
                                         % calibration coefficients have been
                                         % applied to improve the accuracy of the
                                         % returned values.
-        
-
 
         % Optional supported features, interrogated on construction to determine
         % if each feature is supported.
@@ -104,11 +143,11 @@ classdef Spectrometer < handle
                            'thermo_electric', 0, ...
                            'indy', 0, ...
                            'internal_trigger', 0, ...
-                           'data_buffer', 0, ...
-                           );
+                           'data_buffer', 0);
+
         
         % Calibration Coefficients (Java Objects)
-        % com.oceanoptics.omnidriver.spectrometer.Coefficients
+        % Class: com.oceanoptics.omnidriver.spectrometer.Coefficients
 
         cc_eeprom                       % Refresh our internal buffer with
                                         % the current calibration settings
@@ -141,169 +180,24 @@ classdef Spectrometer < handle
             
             if nargin ~= 1 || ~strcmp( class(OD), 'OmniDriver' )
 
-                error(['Spectrometer class requires OmniDriver object']);
-
+                warning(['Spectrometer requires OmniDriver object interface ' ...
+                         'with hardware']);
+                
+                return
             end
             
             S(OD.number_connected_spectrometer) = Spectrometer;
 
             idx = 0;                 % omnidriver uses 0 based counting
 
-            for idx = 1 : OD.number_connected_spectrometers)
+            for idx = 1 : OD.number_connected_spectrometers
                 
                 S(idx).idx = idx;
                 idx = idx + 1;
 
-                S(idx).name = OD.wrapper.getName(S(idx).idx);
-                S(idx).serial_number = OD.wrapper.getSerialNumber(S(idx).idx);
+                S.OD = OD;
 
-                S(idx).max_int_time = ... % us
-                    OD.wrapper.getMaximumIntegrationTime(S(idx).idx);
-                
-                S(idx).min_int_time = ... % us
-                    OD.wrapper.getMinimumIntegrationTime(S(idx).idx);
-                
-                S(idx).int_step_inc = ... % us
-                    OD.wrapper.getIntegrationStepIncrement(S(idx).idx);
-                
-                S(idx).max_intensity = ... % a.u.
-                    OD.wrapper.getMaxiumIntensity(S(idx).idx);
-                
-                S(idx).firmware_ver = ...
-                    OD.wrapper.getFirmwareVersion(S(idx).idx);
-                
-                S(idx).firmware_model = ...
-                    OD.wrapper.getFirmwareModel(S(idx).idx);
-                
-                S(idx).n_px = ...
-                    OD.wrapper.getNumberOfPixels(S(idx).idx);
-                
-                S(idx).n_dark_px = ...
-                    OD.wrapper.getNumberOfDarkPixels(S(idx).idx);
-                
-                S(idx).int_time = ... % us
-                    OD.wrapper.getIntegrationTime(S(idx).idx);
-                
-                S(idx).n_scan_average = ....
-                    OD.wrapper.getScansToAverage(S(idx).idx);
-                
-                S(idx).boxcar_width = ...
-                    OD.wrapper.getBoxcarWidth(S(idx).idx);
-                
-                S(idx).cc_eeprom = ...
-                    OD.wrapper.getCalibrationCoefficientsFromEEProm(S(idx).idx);
-
-                S(idx).cc_buffer = ...
-                    OD.wrapper.getCalibrationCoefficientsFromBuffer(S(idx).idx);
-                
-                S(idx).mode = ...
-                    OD.wrapper.getExternalTriggerMode(S(idx).idx);
-                
-                S(idx).p_elect_dark = ...
-                    OD.wrapper.getCorrectForElectricalDark(S(idx).idx);
-                
-                S(idx).p_stray_light = ...
-                    OD.wrapper.getCorrectForStrayLight(S(idx).idx);
-                
-                S(idx).p_non_linear = ...
-                    OD.wrapper.CorrectForDetectorNonlinearity(S(idx).idx);
-                
-                S(idx).p_strobe = ...
-                    OD.wrapper.getStrobeEnable(S(idx).idx);
-
-                S(idx).wavelengths = ...
-                    OD.wrapper.getWavelengths(S(idx).idx);
-                
-                % Determine what features are avaliable for use on this
-                % spectrometer
-                
-                S(idx).features.gpio = ...
-                    OD.wrapper.isFeatureSupportedGPIO(S(idx).idx);
-
-                S(idx).features.saturation_threshold = ...
-                    OD.wrapper.isFeatureSupportedSaturationThreshold(S(idx).idx);
-                
-                S(idx).features.spibus = ...
-                    OD.wrapper.isFeatureSupportedSPIBus(S(idx).idx);
-                
-                S(idx).features.light_src = ...
-                    OD.wrapper.isFeatureSupportedLightSource(S(idx).idx);
-                
-                S(idx).features.single_strobe = ...
-                    OD.wrapper.isFeatureSupportedSingleStrobe(S(idx).idx);
-                
-                S(idx).features.current_out = ...
-                    OD.wrapper.isFeatureSupportedCurrentOut(S(idx).idx);
-                
-                S(idx).features.board_temp = ...
-                    OD.wrapper.isFeatureSupportedBoardTemperature(S(idx).idx);
-                
-                S(idx).features.detector_temp = ...
-                    OD.wrapper.isFeatureSupportedDetectorTemperature(S(idx).idx);
-                
-                S(idx).features.analogue_in = ...
-                    OD.wrapper.isFeatureSupportedAnalogIn(S(idx).idx);
-                
-                S(idx).features.analogue_out = ...
-                    OD.wrapper.isFeatureSupportedAnalogOut(S(idx).idx);
-                
-                S(idx).features.ls450 = ...
-                    OD.wrapper.isFeatureSupportedLS450(S(idx).idx);
-                
-                S(idx).features.ls450_external_temp = ...
-                    OD.wrapper ...
-                    .isFeatureSupported_USB_LS450_ExternalTemperature(S(idx).idx);
-                
-                S(idx).features.uv_vis_light_src = ...
-                    OD.wrapper.isFeatureSupported_UV_VIS_LightSource(S(idx).idx);
-                
-                S(idx).features.px_binning = ...
-                    OD.wrapper.isFeatureSupportedPixelBinning(S(idx).idx);
-                
-                S(idx).features.network_config = ...
-                    OD.wrapper.isFeatureSupportedNetworkConfigure(S(idx).idx);
-                
-                S(idx).features.spectrum_type = ...
-                    OD.wrapper.isFeatureSupportedSpectrumType(S(idx).idx);
-                
-                S(idx).features.external_trigger_delay = ...
-                    OD.wrapper.isFeatureSupportedExternalTriggerDelay(S(idx).idx);
-                
-                S(idx).features.ic2bus = ...
-                    OD.wrapper.isFeatureSupportedI2CBus(S(idx).idx);
-                
-                S(idx).features.hi_gain_mode = ...
-                    OD.wrapper.isFeatureSupportedHighGainMode(S(idx).idx);
-                
-                S(idx).features.irradiance_cal_factor = ...
-                    OD.wrapper ...
-                    .isFeatureSupportedIrradianceCalibrationFactor(S(idx).idx);
-                
-                S(idx).features.nonlinearity_correction_provider = ...
-                    OD.wrapper ...
-                    .isFeatureSupportedNonlinearityCorrectionProvider(S(idx).idx);
-                
-                S(idx).features.stray_light_correction = ...
-                    OD.wrapper.isFeatureSupportedStrayLightCorrection(S(idx).idx);
-                
-                S(idx).features.controller_version = ...
-                    OD.wrapper.isFeatureSupportedVersion(S(idx).idx);
-                
-                S(idx).features.wavelength_calibration_provider = ...
-                    OD.wrapper ...
-                    .isFeatureSupportedWavelengthCalibrationProvider(S(idx).idx);
-                
-                S(idx).features.thermo_electric = ...
-                    OD.wrapper.isFeatureSupportedThermoElectric(S(idx).idx);
-                
-                S(idx).features.indy = ...
-                    OD.wrapper.isFeatureSupportedIndy(S(idx).idx);
-                
-                S(idx).features.internal_trigger = ...
-                    OD.wrapper.isFeatureSupportedInternalTrigger(S(idx).idx);
-                
-                S(idx).features.data_buffer = ...
-                    OD.wrapper.getFeatureControllerDataBuffer(S(idx).idx);
+                getAllCapabilities(S);
 
             end
         end
@@ -324,7 +218,7 @@ classdef Spectrometer < handle
                                  S(idx).min_int_time, S(idx).max_int_time);
                 warning(errstr);
 
-                return;
+                return
             
             end
 
@@ -337,7 +231,7 @@ classdef Spectrometer < handle
             %                                int usec)
 
             OD.wrapper.setIntegrationTime(idx, time);
-            assertApplied(time, OD.wrapper.getIntegrationTime(idx), ...
+            assertApplied(time, S.OD.wrapper.getIntegrationTime(idx), ...
                           'integration time');
             S(idx).int_time = time;
 
@@ -360,7 +254,7 @@ classdef Spectrometer < handle
                                   'a real positive integer less than %d.'], ...
                                  S.MAX_BOXCAR_WIDTH);
                 warning(errstr);
-                return;
+                return
             
             end
 
@@ -373,47 +267,51 @@ classdef Spectrometer < handle
             %                            int numberOfPixelsOnEitherSideOfCenter)
 
             OD.wrapper.setBoxcarWidth(idx, width);
-            assertApplied(width, OD.wrapper.getBoxcarWidth(idx), ...
+            assertApplied(width, S.OD.wrapper.getBoxcarWidth(idx), ...
                           'boxcar width');
             S(idx).boxcar_width = width;
 
         end
-    end
 
-    function setScansToAverage(idx, scans)
-    % Define number of scans to average before returning spectral data from
-    % OmniDriver getSpectrum(). Default is "1" - ie. do not average multiple
-    % scans together. 
         
-        if ~isint(scans) ...
-                || ~isreal(scans) ...
-                || scans < 1 ...
-                || scans > S.MAX_SCANS
+
+        function setScansToAverage(idx, scans)
+        % Define number of scans to average before returning spectral data from
+        % OmniDriver getSpectrum(). Default is "1" - ie. do not average multiple
+        % scans together. 
             
-            errstr = sprintf(['Cannot set boxcar width, input must be ' ...
-                              'a real positive integer less than %d.'], ...
-                             S.MAX_SCANS);
-            warning(errstr);
-            return;
-            
-            % Set scans to average using OmniDriver wrapper:
-            %
-            % com.oceanoptics.omnidriver.api.wrapper            
-            %  setScansToAverage
-            %
-            % public void setScansToAverage(int spectrometerIndex,
-            %                               int channelIndex,
-                              
-            OD.wrapper.setScansToAverage(idx, scans);
-            assertApplied(scans, OD.wrapper.getScansToAverage(idx), ...
-                          'scans to average');
-            S(idx).boxcar_width = width;
-        
+            if ~isint(scans) ...
+                    || ~isreal(scans) ...
+                    || scans < 1 ...
+                    || scans > S.MAX_SCANS
+                
+                errstr = sprintf(['Cannot set boxcar width, input must be ' ...
+                                  'a real positive integer less than %d.'], ...
+                                 S.MAX_SCANS);
+                warning(errstr);
+                return
+                
+                % Set scans to average using OmniDriver wrapper:
+                %
+                % com.oceanoptics.omnidriver.api.wrapper            
+                %  setScansToAverage
+                %
+                % public void setScansToAverage(int spectrometerIndex,
+                %                               int channelIndex,
+                
+                OD.wrapper.setScansToAverage(idx, scans);
+                assertApplied(scans, S.OD.wrapper.getScansToAverage(idx), ...
+                              'scans to average');
+                S(idx).boxcar_width = width;
+                
+            end
+        end
     end
-    
 
     methods (Access = private)
         
+        getAllCapabilities(S, OD)          % declaration
+
         function assertApplied(tx, rx, str)
            
             errstr = sprintf('OmniDriver I/O error, could not set %s.', str);
