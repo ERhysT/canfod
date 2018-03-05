@@ -41,11 +41,11 @@ classdef OmniDriver < handle
             OD.api_version = OD.wrapper.getApiVersion();
             OD.build_number = OD.wrapper.getBuildNumber();
 
-            OD.number_connected_spectrometers = ...
-                OD.wrapper.openAllSpectrometers();
-            
             % openAllSpectrometers() returns number of connected
             % spectrometers as a double. Returns -1 in error.
+            
+            OD.number_connected_spectrometers = ...
+                OD.wrapper.openAllSpectrometers();
             
             if OD.number_connected_spectrometers == -1 || ...
                     ~isWholeNumber(OD.number_connected_spectrometers)
