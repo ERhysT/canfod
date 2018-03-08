@@ -28,6 +28,8 @@ classdef OmniDriver < handle
         % Constructor creates omnidriver Java Object and performs
         % basic initialisation of connected USB spectrometers.
             
+            fprintf('Constructing Omnidriver\n');
+
             try
 
                 OD.wrapper = com.oceanoptics.omnidriver.api.wrapper.Wrapper();
@@ -55,7 +57,7 @@ classdef OmniDriver < handle
             else
                 
                 fprintf(['OmniDriver successfully initialised,' ...
-                         '%d spectrometer(s) connected.'], ...
+                         '%d spectrometer(s) connected.\n'], ...
                         OD.number_connected_spectrometers);
 
             end
@@ -84,7 +86,7 @@ classdef OmniDriver < handle
                 
             end
 
-            fprintf('OmniDriver Disconnected');
+            fprintf('OmniDriver Disconnected\n');
 
         end
     end

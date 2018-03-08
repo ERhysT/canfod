@@ -24,10 +24,9 @@ classdef Spectrometer < handle
 % using 
 % 
 % Additional validation parameters have been created where the
-% spectrometer/OmniDriver does not provide a mechanism for sane
-% defaults.
+% spectrometer/OmniDriver does not provide a mechanism for sane defaults.
 % 
-% Calibration are retrevied on initialisation, however they cannot currently
+% Calibration are retrieved on initialisation, however they cannot currently
 % be set.
 % 
 % TODO: -
@@ -41,70 +40,73 @@ classdef Spectrometer < handle
 % 
     properties
         
-        OD(1,1) OO_HSF.OmniDriver                   % driver
-        idx(1,1) double {mustBeNonNegative}         % 0 based counting system
+        %% ========== OmniDriver and Model Information ========== %%
+
+        OD                                          % driver
+        idx(1,1) double {mustBeNonnegative} = 0     % 0 based counting system
         name(1,1) string                            % spectrometer name
         serial_number(1,1) string
         firmware_ver(1,1) string
         firmware_model(1,1) string
 
+        %% ========== Acquisition Parameters ========== %%
 
-        % Aquisition Parameters
+        int_time(1,1) double {mustBePositive} = 1      % integration time (us)
+        max_int_time(1,1) double {mustBePositive} = 1  % maximum integration
+        min_int_time(1,1) double {mustBePositive} = 1  % minimum integration
+        int_step_inc(1,1) double {mustBePositive} = 1  % step increment
+                                                    
 
-        int_time(1,1) double {mustBePositive}       % integration time (us)
-        max_int_time(1,1) double {mustBePositive}
-        min_int_time(1,1) double {mustBePositive}
-        int_step_inc(1,1) double {mustBePositive}   % step size
+        n_scan_average(1,1) double {mustBeWholeNumber} = 1
+        boxcar_width(1,1) double {mustBeWholeNumber, mustBePositive} = 1
 
-        n_scan_average(1,1) double {mustBeWholeNumber}
+        p_strobe(1,1) boolean {mustBeBoolean}      % is strobe enabled
+        p_non_linear(1,1) boolean {mustBeBoolean}  % is linearity correction enabled
+        p_elect_dark(1,1) boolean {mustBeBoolean}  % is electrical dark
+                                                   % correction enabled
+
+        p_stray_light(1,1) {mustBeBoolean}          % true if stray light
+                                                    % correction is enabled
+
+        p_timeout(1,1) double {mustBeBoolean}       % true if an acquisition
+                                                    % timeout is set
+
+        %% ========== Spectrometer information ========== %%
         
-        boxcar_width(1,1) double {mustBeWholeNumber, mustBePositive}
+        max_intensity(1,1) double {mustBePositive} = 1
+                                                    % maximum possible value for
+                                                    %  a CCD pixel. Equivalent
+                                                    % to the saturation point
+
+        n_px(1,1) double {mustBePositive} = 1       % total number of pixels
+                                                    % (i.e. CCD elements)
+                                                    % provided by this
+                                                    % spectrometer, including
+                                                    % any dark or bevel (unused)
+                                                    % pixels
         
-        max_intensity        int        % maximum possible value for a CCD
-                                        % pixel. Equivalent to the saturation
-                                        % point.
-
-
+        n_dark_px(1,1) double {mustBePositive} = 1  % number of dark pixels
+                                                    % provided by this
+                                                    % spectrometer mode int
+                                                    % external trigger mode
+                                                    % of the spectrometer.
         
-        n_px                 int        % total number of pixels (ie. CCD
-                                        % elements) provided by this
-                                        % spectrometer, including any dark or
-                                        % bevel (unused) pixels
+        wavelengths double {mustBePositive} = 1     % calculated wavelength
+                                                    % values corresponding to
+                                                    % each pixel in the
+                                                    % acquired
+                                                    % spectrum. Wavelength
+                                                    % calibration
+                                                    % coefficients have been
+                                                    % applied to improve the
+                                                    % accuracy of the
+                                                    % returned
+                                                    % values.
         
-        n_dark_px            int        % number of dark pixels provided by
-                                        % this spectrometer
-        
+        %% ========== Optional Features ========== %%
 
-
-
-        
-
-        mode                 int        % external trigger mode of the
-                                        % spectrometer.
-
-        p_elect_dark         bool       % True if electrical dark connection
-                                        % is enabled
-
-        p_stray_light        bool       % true if stray light correction is
-                                        % enabled
-        
-        p_non_linear         bool       % true if non linearity correction is
-                                        % enabled
-        
-        p_strobe             bool       % true if strobe is enabled
-
-        p_timeout            bool       % true if an aquisition timeout is
-                                        % set
-        
-        wavelengths          double     % calculated wavelength values
-                                        % corresponding to each pixel in the
-                                        % acquired spectrum. Wavelength
-                                        % calibration coefficients have been
-                                        % applied to improve the accuracy of the
-                                        % returned values.
-
-        % Optional supported features, interrogated on construction to determine
-        % if each feature is supported.
+        % Optional supported features, interrogated on construction to
+        % determine if each feature is supported.
         
         features = struct( 'gpio', 0, ...
                            'saturation_threshold', 0, ...
@@ -135,24 +137,24 @@ classdef Spectrometer < handle
                            'indy', 0, ...
                            'internal_trigger', 0, ...
                            'data_buffer', 0);
-
         
-        % Calibration Coefficients (Java Objects)
+        %% ========== Calibration Coefficients ========== %%
+        % (Java Objects)
         % Class: com.oceanoptics.omnidriver.spectrometer.Coefficients
 
-        cc_eeprom                       % Refresh our internal buffer with
-                                        % the current calibration settings
-                                        % obtained directly from the
+        cc_eeprom(1,1) = []             % Refresh spectrometer's internal
+                                        % buffer with the current calibration
+                                        % settings obtained directly from the
                                         % spectrometer EEPROM. Then return a
                                         % copy of these values. These are the
                                         % values which will be used for all
                                         % spectral acquisitions on this
-                                        % spectrometer. 
+                                        % spectrometer.
 
-        cc_buffer                       % calibration coefficients as
-                                        % currently stored in our internal
-                                        % buffer. These are the values which
-                                        % will be used for all spectral
+        cc_buffer(1,1) = []             % calibration coefficients as
+                                        % currently stored in the spectrometer's
+                                        % internal buffer. These are the values
+                                        % which will be used for all spectral
                                         % acquisitions on this spectrometer.
     end
     
@@ -171,7 +173,7 @@ classdef Spectrometer < handle
             
             if nargin ~= 1 || ~strcmp( class(OD), 'OmniDriver' )
 
-                warning(['Spectrometer requires OmniDriver object interface ' ...
+                warning(['Spectrometer requires OmniDriver object to interface ' ...
                          'with hardware']);
                 
                 return
@@ -179,14 +181,16 @@ classdef Spectrometer < handle
             
             S(OD.number_connected_spectrometer) = Spectrometer;
 
-            idx = 0;                 % omnidriver uses 0 based counting
+            idx = 0;                 % OmniDriver uses 0 based counting
 
             for idx = 1 : OD.number_connected_spectrometers
                 
                 S(idx).idx = idx;
                 idx = idx + 1;
 
+                fprintf('==========1\n')
                 S.OD = OD;
+                fprintf('==========2\n');
 
                 getAllCapabilities(S);
 
@@ -195,8 +199,8 @@ classdef Spectrometer < handle
         
         function setIntegrationTime(idx, time)
         % Validate the requested integration time according to the
-        % capabilites of the indexed spectrometer. If within acceptable
-        % boundries, apply to indexed spectrometer.
+        % capabilities of the indexed spectrometer. If within acceptable
+        % boundaries, apply to indexed spectrometer.
 
             if time < S(idx).min_int_time ...
                     || time > S(idx).max_int_time ...
@@ -268,7 +272,7 @@ classdef Spectrometer < handle
 
         function setScansToAverage(idx, scans)
         % Define number of scans to average before returning spectral data from
-        % OmniDriver getSpectrum(). Default is "1" - ie. do not average multiple
+        % OmniDriver getSpectrum(). Default is "1" - i.e. do not average multiple
         % scans together. 
             
             if ~isint(scans) ...
@@ -296,6 +300,21 @@ classdef Spectrometer < handle
                 S(idx).boxcar_width = width;
                 
             end
+        end
+
+        function delete(S)
+        % Runs when spectrometer object is no longer referenced by any
+        % variables: To be implemented
+            
+            % close all open files
+
+            % turn off lamp?
+            
+            % turn off data aquisition?
+
+            fprintf('Spectrometer #%d (%s) destroyed\n', ...
+                    S.idx, S.name);
+            
         end
     end
 
