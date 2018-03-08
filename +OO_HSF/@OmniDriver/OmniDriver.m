@@ -51,6 +51,12 @@ classdef OmniDriver < handle
                     ~OO_HSF.isWholeNumber(OD.number_connected_spectrometers)
 
                 error('OmniDriver I/O error');
+                
+            else
+                
+                fprintf(['OmniDriver successfully initialised,' ...
+                         '%d spectrometer(s) connected.'], ...
+                        OD.number_connected_spectrometers);
 
             end
 
@@ -67,6 +73,19 @@ classdef OmniDriver < handle
                 
                 status = false;
             end
+        end
+
+        function delete(OD)
+        % Destroy OmniDriver Object.
+            
+            if ~isempty(OD.wrapper)
+                
+                OD.wrapper.closeAllSpectrometers();
+                
+            end
+
+            fprintf('OmniDriver Disconnected');
+
         end
     end
 
