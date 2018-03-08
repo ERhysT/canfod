@@ -41,35 +41,30 @@ classdef Spectrometer < handle
 % 
     properties
         
-        OD                   OmniDriver % Reference to OmniDriver
+        OD(1,1) OO_HSF.OmniDriver                   % driver
+        idx(1,1) double {mustBeNonNegative}         % 0 based counting system
+        name(1,1) string                            % spectrometer name
+        serial_number(1,1) string
+        firmware_ver(1,1) string
+        firmware_model(1,1) string
 
-        idx                  int        % index number assigned by omnidriver
-                                        % omnidriver uses zero based counting
-                                        % system
 
-        name                 string     % identifying the type of
-                                        % spectrometer
+        % Aquisition Parameters
+
+        int_time(1,1) double {mustBePositive}       % integration time (us)
+        max_int_time(1,1) double {mustBePositive}
+        min_int_time(1,1) double {mustBePositive}
+        int_step_inc(1,1) double {mustBePositive}   % step size
+
+        n_scan_average(1,1) double {mustBeWholeNumber}
         
-        serial_number        string     % serial number of the specified
-                                        % spectrometer
-        
-        max_int_time         int        % maximum allowed integration time,
-                                        % in microseconds
-
-        min_int_time         int        % minimum allowed integration time,
-                                        % in microseconds
-
-        int_step_inc         int        % integration step size in
-                                        % microseconds
+        boxcar_width(1,1) double {mustBeWholeNumber, mustBePositive}
         
         max_intensity        int        % maximum possible value for a CCD
                                         % pixel. Equivalent to the saturation
                                         % point.
 
-        firmware_ver         string     % version of the FX2 firmware in the
-                                        % spectrometer
 
-        firmware_model       string     % model name in the spectrometer
         
         n_px                 int        % total number of pixels (ie. CCD
                                         % elements) provided by this
@@ -79,14 +74,10 @@ classdef Spectrometer < handle
         n_dark_px            int        % number of dark pixels provided by
                                         % this spectrometer
         
-        int_time             int        % current integration time setting,
-                                        % in units of microseconds
 
-        n_scan_average       int        % number of scans to average
+
+
         
-        boxcar_width         int        % number of pixels on either side of
-                                        % a given pixel to average together
-                                        % when obtaining a spectrum.
 
         mode                 int        % external trigger mode of the
                                         % spectrometer.

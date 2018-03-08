@@ -1,30 +1,31 @@
 function getAllCapabilities(S)
 
     S(idx).name = OD.wrapper.getName(S(idx).idx);
-    
     S(idx).serial_number =  OD.wrapper.getSerialNumber(S(idx).idx);
+    S(idx).firmware_ver =  OD.wrapper.getFirmwareVersion(S(idx).idx);
+    S(idx).firmware_model = OD.wrapper.getFirmwareModel(S(idx).idx);
 
+    % Aquisition Parameters
+
+    S(idx).int_time = OD.wrapper.getIntegrationTime(S(idx).idx);
     S(idx).max_int_time = OD.wrapper.getMaximumIntegrationTime(S(idx).idx);
-    
     S(idx).min_int_time = OD.wrapper.getMinimumIntegrationTime(S(idx).idx);
-    
     S(idx).int_step_inc = OD.wrapper.getIntegrationStepIncrement(S(idx).idx);
+
+    S(idx).n_scan_average = OD.wrapper.getScansToAverage(S(idx).idx);
+
+    S(idx).boxcar_width = OD.wrapper.getBoxcarWidth(S(idx).idx);
     
     S(idx).max_intensity = OD.wrapper.getMaxiumIntensity(S(idx).idx);
     
-    S(idx).firmware_ver =  OD.wrapper.getFirmwareVersion(S(idx).idx);
+
     
-    S(idx).firmware_model = OD.wrapper.getFirmwareModel(S(idx).idx);
+
     
     S(idx).n_px = OD.wrapper.getNumberOfPixels(S(idx).idx);
-    
     S(idx).n_dark_px = OD.wrapper.getNumberOfDarkPixels(S(idx).idx);
     
-    S(idx).int_time = OD.wrapper.getIntegrationTime(S(idx).idx);
-    
-    S(idx).n_scan_average = OD.wrapper.getScansToAverage(S(idx).idx);
-    
-    S(idx).boxcar_width = OD.wrapper.getBoxcarWidth(S(idx).idx);
+
     
     S(idx).cc_eeprom = ...
         OD.wrapper.getCalibrationCoefficientsFromEEProm(S(idx).idx);

@@ -16,9 +16,9 @@ classdef OmniDriver < handle
     properties
         
         wrapper                         % Java object
-        api_version
-        build_number
-        number_connected_spectrometers
+        api_version(1,1) string
+        build_number(1,1) double {mustBeInteger}
+        number_connected_spectrometers {mustBeInteger}
 
     end
 
@@ -38,7 +38,7 @@ classdef OmniDriver < handle
                 return
             end
             
-            OD.api_version = OD.wrapper.getApiVersion();
+            OD.api_version = string(OD.wrapper.getApiVersion());
             OD.build_number = OD.wrapper.getBuildNumber();
 
             % openAllSpectrometers() returns number of connected
@@ -48,7 +48,7 @@ classdef OmniDriver < handle
                 OD.wrapper.openAllSpectrometers();
             
             if OD.number_connected_spectrometers == -1 || ...
-                    ~isWholeNumber(OD.number_connected_spectrometers)
+                    ~OO_HSF.isWholeNumber(OD.number_connected_spectrometers)
 
                 error('OmniDriver I/O error');
 
