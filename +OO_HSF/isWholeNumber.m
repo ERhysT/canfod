@@ -1,7 +1,6 @@
 function whole_p = isWholeNumber(x)
 % ISWHOLENUMBER - Check that the variable x (of class double) is a
-% mathematical integer; that is that it is real and whole. Return is of class
-% boolean.
+% mathematical integer. Returns boolean.
     
     if ~isnumeric(x)
 
